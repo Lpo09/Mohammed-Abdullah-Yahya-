@@ -1,0 +1,84 @@
+import secrets
+import string
+import hashlib
+
+
+def generate_password(length: int = 16) -> str:
+    """
+    Generate a cryptographically secure random password.
+    Includes uppercase, lowercase, digits, and special characters.
+    Uses secrets module (not random) to prevent prediction attacks.
+    """
+    if length < 4:
+        raise ValueError("Password length must be at least 4 characters.")
+
+    # Character pool: uppercase + lowercase + digits + punctuation
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+
+    # Ensure at least one character from each category for security
+    password_chars = [
+        secrets.choice(string.ascii_lowercase),
+        secrets.choice(string.ascii_uppercase),
+        secrets.choice(string.digits),
+        secrets.choice(string.punctuation),
+    ]
+
+    # Fill the rest of the password with random characters from the full pool
+    for _ in range(length - 4):
+        password_chars.append(secrets.choice(alphabet))
+
+    # Shuffle to avoid predictable positions using secrets (Fisher-Yates)
+    for i in range(len(password_chars) - 1, 0, -1):
+        j = secrets.randbelow(i + 1)
+        password_chars[i], password_chars[j] = password_chars[j], password_chars[i]
+
+    return "".join(password_chars)
+
+
+def sha256_hash(text: str) -> str:
+    """
+    Compute the SHA-256 hash of a given text.
+    The text is encoded to bytes (UTF-8) before hashing.
+    Returns the hash in hexadecimal format.
+    """
+    encoded_text = text.encode("utf-8")
+    return hashlib.sha256(encoded_text).hexdigest()
+
+
+def main():
+    print("=" * 60)
+    print("   Password Generator & SHA-256 Hasher")
+    print("=" * 60)
+
+    # Get desired password length from the user
+    try:
+        length = int(input("Enter the desired password length (e.g., 16): "))
+    except ValueError:
+        print("[!] Invalid input. Using default length = 16.")
+        length = 16
+
+    # Generate password
+    password = generate_password(length)
+    password_hash = sha256_hash(password)
+
+    # Display results
+    print("\n" + "-" * 60)
+    print(f"[+] Generated Password : {password}")
+    print(f"[+] Length             : {len(password)}")
+    print(f"[+] SHA-256 Hash       : {password_hash}")
+    print("-" * 60)
+
+    # Educational note about cryptographic hashing
+    print("\n[INFO] Why hash passwords?")
+    print("  • Hashing is a one-way function — the original password cannot")
+    print("    be recovered from the hash.")
+    print("  • Systems store only the hash, so even if the database is")
+    print("    breached, attackers cannot read the plaintext passwords.")
+    print("  • SHA-256 produces a fixed 256-bit (64 hex chars) output,")
+    print("    regardless of input length.")
+    print("  • For real-world password storage, use salt + slow hashes")
+    print("    like bcrypt, scrypt, or Argon2 instead of raw SHA-256.")
+
+
+if __name__ == "__main__":
+    main()
