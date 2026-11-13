@@ -1,0 +1,118 @@
+"""
+File Integrity Monitoring (FIM) Tool
+Assignment #9
+"""
+
+import hashlib
+import time
+import os
+from datetime import datetime
+
+# ============================================================
+# 1) SHA-256 hash calculation function (using chunks for large files)
+# ============================================================
+def calculate_sha256(file_path: str, chunk_size: int = 4096) -> str:
+    """
+    Calculates the SHA-256 hash of a file's content by reading it
+    in chunks to ensure efficiency with large files.
+    """
+    sha256_hash = hashlib.sha256()
+    try:
+        with open(file_path, "rb") as f:  # binary read mode
+            for chunk in iter(lambda: f.read(chunk_size), b""):
+                sha256_hash.update(chunk)
+        return sha256_hash.hexdigest()
+    except FileNotFoundError:
+        return "FILE_NOT_FOUND"
+    except PermissionError:
+        return "PERMISSION_DENIED"
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ============================================================
+# 2) Create initial baseline hash
+# ============================================================
+def create_baseline(file_path: str) -> str:
+    """
+    Creates the reference baseline hash on first tool run.
+    """
+    baseline_hash = calculate_sha256(file_path)
+    print(f"[*] Baseline hash created for file:")
+    print(f"    Path    : {file_path}")
+    print(f"    SHA-256 : {baseline_hash}")
+    print(f"    Time    : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    return baseline_hash
+
+
+# ============================================================
+# 3) Critical security alert
+# ============================================================
+def trigger_critical_alert(file_path: str, old_hash: str, new_hash: str) -> None:
+    """
+    Fires a critical security alert when unauthorized modification is detected.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print("\n" + "!" * 60)
+    print("🚨 [CRITICAL ALERT] 🚨 - Unauthorized modification detected!")
+    print("!" * 60)
+    print(f"  File        : {file_path}")
+    print(f"  Time        : {timestamp}")
+    print(f"  Old Hash    : {old_hash}")
+    print(f"  New Hash    : {new_hash}")
+    print("!" * 60 + "\n")
+
+
+# ============================================================
+# 4) Continuous monitoring loop
+# ============================================================
+def monitor_file(file_path: str, interval: int = 3) -> None:
+    """
+    Continuously monitors the file and compares the current
+    hash with the baseline hash.
+    """
+    if not os.path.exists(file_path):
+        print(f"[!] File not found: {file_path}")
+        return
+
+    # Create baseline hash
+    baseline_hash = create_baseline(file_path)
+    print(f"[*] Starting monitoring every {interval} seconds... (Press Ctrl+C to stop)\n")
+
+    while True:
+        try:
+            time.sleep(interval)  # regulate intervals & prevent CPU exhaustion
+            current_hash = calculate_sha256(file_path)
+
+            # Compare current hash with baseline
+            if current_hash != baseline_hash:
+                trigger_critical_alert(file_path, baseline_hash, current_hash)
+                # Update baseline to avoid repeated alerts for the same change
+                baseline_hash = current_hash
+                print("[*] Baseline updated to the new hash.\n")
+            else:
+                print(f"[✓] {datetime.now().strftime('%H:%M:%S')} - File is intact (no changes).")
+
+        except KeyboardInterrupt:
+            print("\n[*] Monitoring stopped by user.")
+            break
+        except Exception as e:
+            print(f"[!] Error during monitoring: {e}")
+            time.sleep(interval)
+
+
+# ============================================================
+# 5) Main entry point
+# ============================================================
+if __name__ == "__main__":
+    # Target file to monitor — adjust for your system
+    TARGET_FILE = "/etc/passwd"          # on Linux
+    # TARGET_FILE = r"C:\Windows\System32\drivers\etc\hosts"  # on Windows
+
+    # Interval between checks (in seconds)
+    CHECK_INTERVAL = 3
+
+    print("=" * 60)
+    print("      File Integrity Monitoring Tool - FIM")
+    print("=" * 60)
+    monitor_file(TARGET_FILE, CHECK_INTERVAL)
