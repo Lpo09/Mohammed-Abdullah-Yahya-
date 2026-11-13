@@ -1,0 +1,9 @@
+# uploads/.htaccess
+# Block execution of any script inside the upload directory
+<FilesMatch "\.(php|phtml|php3|php4|php5|phps|pht|phar|cgi|pl|py|sh|asp|aspx|jsp)$">
+    Require all denied
+</FilesMatch>
+
+# Disable PHP execution
+php_flag engine off
+Options -ExecCGI -Indexes
