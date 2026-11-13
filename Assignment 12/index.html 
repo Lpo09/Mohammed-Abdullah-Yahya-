@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Upload</title>
+</head>
+<body>
+    <h2>Upload a file (pdf / png / jpg) — max 2MB</h2>
+    <form action="upload.php" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file_uploaded" required>
+        <button type="submit">Upload</button>
+    </form>
+</body>
+</html>
