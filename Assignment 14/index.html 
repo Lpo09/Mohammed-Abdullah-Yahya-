@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DOM XSS Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    input { width: 100%; padding: 10px; font-size: 16px; margin-bottom: 10px; }
+    button { padding: 10px 20px; font-size: 16px; margin-right: 10px; cursor: pointer; }
+    .danger { background: #e74c3c; color: #fff; border: none; }
+    .safe   { background: #27ae60; color: #fff; border: none; }
+    .box { margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 6px; min-height: 40px; }
+    .label { font-weight: bold; margin-top: 20px; }
+    .warn { color: #e74c3c; }
+    .ok   { color: #27ae60; }
+  </style>
+</head>
+<body>
+
+  <h1>DOM-Based XSS Demo</h1>
+
+  <input type="text" id="userInput" placeholder="Enter text here..." />
+  <button class="danger" id="unsafeBtn">Unsafe Display (innerHTML)</button>
+  <button class="safe"   id="safeBtn">Safe Display (textContent)</button>
+
+  <div class="label warn">Unsafe Output (innerHTML):</div>
+  <div class="box" id="unsafeOutput"></div>
+
+  <div class="label ok">Safe Output (textContent):</div>
+  <div class="box" id="safeOutput"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
