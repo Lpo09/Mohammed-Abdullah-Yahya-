@@ -1,0 +1,111 @@
+import re
+from collections import Counter
+
+# ============================================================
+# 1. Define Regex Patterns for Common Web Attacks
+# ============================================================
+
+ATTACK_PATTERNS = {
+    "SQL Injection": re.compile(
+        r"(union\s+select|select\s+.*\s+from|or\s+1\s*=\s*1|' or '|drop\s+table|insert\s+into)",
+        re.IGNORECASE
+    ),
+    "Path Traversal": re.compile(
+        r"(\.\./|\.\.\\|/etc/passwd|/etc/shadow|boot\.ini|win\.ini)",
+        re.IGNORECASE
+    ),
+    "XSS (Cross-Site Scripting)": re.compile(
+        r"(<script.*?>|javascript:|onerror\s*=|onload\s*=)",
+        re.IGNORECASE
+    ),
+    "Command Injection": re.compile(
+        r"(;\s*cat\s|;\s*ls\s|\|\s*whoami|`.*`|\$\(.*\))",
+        re.IGNORECASE
+    ),
+    "LFI / RFI": re.compile(
+        r"(include\s*\(|require\s*\(|php://|file://|data://)",
+        re.IGNORECASE
+    ),
+}
+
+# Regex to extract the attacker's IP (usually the first field of a web log)
+IP_PATTERN = re.compile(r"^(\d{1,3}(?:\.\d{1,3}){3})")
+
+
+# ============================================================
+# 2. Analyzer Function
+# ============================================================
+
+def analyze_log(file_path):
+    print("=" * 70)
+    print("     AUTOMATED SECURITY LOG ANALYZER - SOC TOOL")
+    print("=" * 70)
+    print(f"[*] Target log file: {file_path}\n")
+
+    total_lines = 0
+    alerts = []
+    attack_counter = Counter()
+
+    try:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as log_file:
+            for line_number, line in enumerate(log_file, start=1):
+                total_lines += 1
+
+                # Extract IP address
+                ip_match = IP_PATTERN.search(line)
+                attacker_ip = ip_match.group(1) if ip_match else "Unknown"
+
+                # Check every attack pattern
+                for attack_type, pattern in ATTACK_PATTERNS.items():
+                    if pattern.search(line):
+                        attack_counter[attack_type] += 1
+                        alerts.append({
+                            "line": line_number,
+                            "ip": attacker_ip,
+                            "type": attack_type,
+                            "payload": line.strip()[:100]
+                        })
+
+                        # Print live alert
+                        print(f"[🚨 ALERT] {attack_type}")
+                        print(f"    ├─ Line Number : {line_number}")
+                        print(f"    ├─ Attacker IP : {attacker_ip}")
+                        print(f"    └─ Payload     : {line.strip()[:80]}...")
+                        print("-" * 70)
+
+    except FileNotFoundError:
+        print(f"[!] Error: File '{file_path}' not found.")
+        return
+    except Exception as e:
+        print(f"[!] Unexpected error: {e}")
+        return
+
+    # ============================================================
+    # 3. Summary Report
+    # ============================================================
+    print("\n" + "=" * 70)
+    print("                     ANALYSIS SUMMARY")
+    print("=" * 70)
+    print(f"[+] Total lines scanned : {total_lines}")
+    print(f"[+] Total alerts fired  : {len(alerts)}")
+    print(f"[+] Unique attackers    : {len(set(a['ip'] for a in alerts))}")
+
+    if attack_counter:
+        print("\n[+] Attacks breakdown by type:")
+        for attack_type, count in attack_counter.most_common():
+            print(f"    • {attack_type:<30} : {count} attempt(s)")
+    else:
+        print("\n[✓] No suspicious activity detected. Log is clean.")
+
+    print("=" * 70)
+
+
+# ============================================================
+# 4. Entry Point
+# ============================================================
+
+if __name__ == "__main__":
+    log_path = input("Enter path to log file: ").strip()
+    if not log_path:
+        log_path = "access.log"  # default
+    analyze_log(log_path)
